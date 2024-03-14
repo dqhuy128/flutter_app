@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 
+import '../apifetching/apifetching.dart';
+import '../models/apimodels.dart';
 import './detail.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -127,19 +134,6 @@ class MyProductList extends StatefulWidget {
 class _MyProductListState extends State<MyProductList> {
   int currentIndex = 1;
 
-  List<String> images = [
-    'https://picsum.photos/250?image=0',
-    'https://picsum.photos/250?image=1',
-    'https://picsum.photos/250?image=2',
-    'https://picsum.photos/250?image=3',
-    'https://picsum.photos/250?image=4',
-    'https://picsum.photos/250?image=5',
-    'https://picsum.photos/250?image=6',
-    'https://picsum.photos/250?image=7',
-    'https://picsum.photos/250?image=8',
-    'https://picsum.photos/250?image=9',
-  ];
-
   late final pageController =
       PageController(initialPage: 0, viewportFraction: 1);
 
@@ -149,44 +143,64 @@ class _MyProductListState extends State<MyProductList> {
     super.dispose();
   }
 
+  Future<List<ProductModels>> postsFuture = ModelApi.getData();
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(0),
       child: SizedBox(
         height: 150,
-        child: GridView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 30),
-          controller: pageController,
-          itemCount: images.length,
-          scrollDirection: Axis.horizontal,
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              mainAxisSpacing: 20,
-              maxCrossAxisExtent: 150,
-              mainAxisExtent: 150),
-          itemBuilder: (ctx, i) {
-            return GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const DetailScreen(),
-                  ),
-                );
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  image: DecorationImage(
-                    image: NetworkImage(images[i]),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-            );
+        child: FutureBuilder<List<ProductModels>>(
+          future: postsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              // until data is fetched, show loader
+              return const CircularProgressIndicator();
+            } else if (snapshot.hasData) {
+              // once data is fetched, display it on screen (call buildPosts())
+              final products = snapshot.data!;
+              return buildPosts(products);
+            } else {
+              // if no data, show simple Text
+              return const Text(
+                "No data available",
+                style: TextStyle(color: Colors.white),
+              );
+            }
           },
         ),
       ),
+    );
+  }
+
+  // function to display fetched data on screen
+  Widget buildPosts(List<ProductModels> products) {
+    // ListView Builder to show data in a list
+    return GridView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 30),
+      controller: pageController,
+      scrollDirection: Axis.horizontal,
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          mainAxisSpacing: 20, maxCrossAxisExtent: 150, mainAxisExtent: 150),
+      itemCount: products.length,
+      itemBuilder: (ctx, i) {
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const DetailScreen(),
+              ),
+            );
+          },
+          child: Column(
+            children: [
+              Text(products[i].title!),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -296,229 +310,3 @@ void showAlert(BuildContext context) {
             content: Text("Hi"),
           ));
 }
-
-// class TitleSection extends StatelessWidget {
-//   const TitleSection({
-//     super.key,
-//     required this.name,
-//     required this.location,
-//   });
-//
-//   final String name;
-//   final String location;
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Padding(
-//       padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
-//       child: Row(
-//         children: [
-//           Expanded(
-//             /*1*/
-//             child: Column(
-//               crossAxisAlignment: CrossAxisAlignment.start,
-//               children: [
-//                 /*2*/
-//                 Padding(
-//                   padding: const EdgeInsets.only(bottom: 8),
-//                   child: Text(
-//                     name,
-//                     style: const TextStyle(
-//                       fontWeight: FontWeight.bold,
-//                       fontSize: 18,
-//                     ),
-//                   ),
-//                 ),
-//                 Text(
-//                   location,
-//                   style: TextStyle(
-//                     fontStyle: FontStyle.italic,
-//                     color: Colors.grey[600],
-//                     fontSize: 14,
-//                   ),
-//                 ),
-//               ],
-//             ),
-//           ),
-//           /*3*/
-//           // #docregion Icon
-//           Icon(
-//             Icons.star,
-//             color: Colors.red[500],
-//           ),
-//           // #enddocregion Icon
-//           const Text('41'),
-//         ],
-//       ),
-//     );
-//   }
-// }
-//
-// class ButtonSection extends StatelessWidget {
-//   const ButtonSection({super.key});
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     Color color = const Color.fromRGBO(56, 115, 245, 1.0);
-//     return SizedBox(
-//       width: double.infinity,
-//       child: Row(
-//         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-//         children: [
-//           ButtonWithText(
-//             color: color,
-//             icon: Icons.call,
-//             label: 'CALL',
-//           ),
-//           ButtonWithText(
-//             color: color,
-//             icon: Icons.near_me,
-//             label: 'ROUTE',
-//           ),
-//           ButtonWithText(
-//             color: color,
-//             icon: Icons.share,
-//             label: 'SHARE',
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-//
-// class ButtonWithText extends StatelessWidget {
-//   const ButtonWithText({
-//     super.key,
-//     required this.color,
-//     required this.icon,
-//     required this.label,
-//   });
-//
-//   final Color color;
-//   final IconData icon;
-//   final String label;
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Column(
-//       mainAxisSize: MainAxisSize.max,
-//       mainAxisAlignment: MainAxisAlignment.center,
-//       children: [
-//         Icon(icon, color: color),
-//         Padding(
-//           padding: const EdgeInsets.only(top: 8),
-//           child: Text(
-//             label,
-//             style: TextStyle(
-//               fontSize: 12,
-//               fontWeight: FontWeight.w400,
-//               color: color,
-//             ),
-//           ),
-//         ),
-//       ],
-//     );
-//   }
-// }
-//
-// class TextSection extends StatelessWidget {
-//   const TextSection({
-//     super.key,
-//     required this.description,
-//   });
-//
-//   final String description;
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Padding(
-//       padding: const EdgeInsets.all(32),
-//       child: Text(
-//         description,
-//         softWrap: true,
-//       ),
-//     );
-//   }
-// }
-//
-// // #docregion ImageSection
-// class ImageSection extends StatelessWidget {
-//   const ImageSection({super.key, required this.image});
-//
-//   final String image;
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     // #docregion Image-asset
-//     return Image.network(
-//       image,
-//       width: MediaQuery.of(context).size.width * 100,
-//       height: MediaQuery.of(context).size.height * 0.35,
-//       fit: BoxFit.cover,
-//     );
-//     // #enddocregion Image-asset
-//   }
-// }
-// // #enddocregion ImageSection
-//
-// // #docregion FavoriteWidget
-// class FavoriteWidget extends StatefulWidget {
-//   const FavoriteWidget({super.key});
-//
-//   @override
-//   State<FavoriteWidget> createState() => _FavoriteWidgetState();
-// }
-// // #enddocregion FavoriteWidget
-//
-// // #docregion _FavoriteWidgetState, _FavoriteWidgetState-fields, _FavoriteWidgetState-build
-// class _FavoriteWidgetState extends State<FavoriteWidget> {
-//   // #enddocregion _FavoriteWidgetState-build
-//   bool _isFavorited = true;
-//   int _favoriteCount = 41;
-//
-//   // #enddocregion _FavoriteWidgetState-fields
-//
-//   // #docregion _toggleFavorite
-//   void _toggleFavorite() {
-//     setState(() {
-//       if (_isFavorited) {
-//         _favoriteCount -= 1;
-//         _isFavorited = false;
-//       } else {
-//         _favoriteCount += 1;
-//         _isFavorited = true;
-//       }
-//     });
-//   }
-//
-//   // #enddocregion _toggleFavorite
-//
-//   // #docregion _FavoriteWidgetState-build
-//   @override
-//   Widget build(BuildContext context) {
-//     return Row(
-//       mainAxisSize: MainAxisSize.min,
-//       children: [
-//         Container(
-//           padding: const EdgeInsets.all(0),
-//           child: IconButton(
-//             padding: const EdgeInsets.all(0),
-//             alignment: Alignment.centerRight,
-//             icon: (_isFavorited
-//                 ? const Icon(Icons.star)
-//                 : const Icon(Icons.star_border)),
-//             color: Colors.red[500],
-//             onPressed: _toggleFavorite,
-//           ),
-//         ),
-//         SizedBox(
-//           width: 18,
-//           child: SizedBox(
-//             child: Text('$_favoriteCount'),
-//           ),
-//         ),
-//       ],
-//     );
-//   }
-// // #docregion _FavoriteWidgetState-fields
-// }
