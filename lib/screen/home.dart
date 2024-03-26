@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../apifetching/apifetching.dart';
 import '../models/apimodels.dart';
-import './detail.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -143,29 +142,42 @@ class _MyProductListState extends State<MyProductList> {
     super.dispose();
   }
 
-  Future<List<ProductModels>> postsFuture = ModelApi.getData();
+  late Future<List<ProductModels>> futureProductModels;
+
+  @override
+  void initState() {
+    super.initState();
+    futureProductModels = fetchProductModels();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(0),
       child: SizedBox(
-        height: 150,
+        height: 600,
         child: FutureBuilder<List<ProductModels>>(
-          future: postsFuture,
-          builder: (context, snapshot) {
+          future: futureProductModels,
+          builder: (BuildContext context,
+              AsyncSnapshot<List<ProductModels>> snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              // until data is fetched, show loader
-              return const CircularProgressIndicator();
-            } else if (snapshot.hasData) {
-              // once data is fetched, display it on screen (call buildPosts())
-              final products = snapshot.data!;
-              return buildPosts(products);
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Text(
+                'Error: ${snapshot.error}',
+                style: const TextStyle(color: Colors.white),
+              );
             } else {
-              // if no data, show simple Text
-              return const Text(
-                "No data available",
-                style: TextStyle(color: Colors.white),
+              return ListView.builder(
+                itemCount: snapshot.data!.length,
+                itemBuilder: (context, index) {
+                  final post = snapshot.data![index];
+                  return ListTile(
+                    title: Text(post.title!),
+                    subtitle: Text(post.description ?? 'nnulll'),
+                    leading: Text(post.category ?? 'nnulll category'),
+                  );
+                },
               );
             }
           },
@@ -174,35 +186,35 @@ class _MyProductListState extends State<MyProductList> {
     );
   }
 
-  // function to display fetched data on screen
-  Widget buildPosts(List<ProductModels> products) {
-    // ListView Builder to show data in a list
-    return GridView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 30),
-      controller: pageController,
-      scrollDirection: Axis.horizontal,
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          mainAxisSpacing: 20, maxCrossAxisExtent: 150, mainAxisExtent: 150),
-      itemCount: products.length,
-      itemBuilder: (ctx, i) {
-        return GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const DetailScreen(),
-              ),
-            );
-          },
-          child: Column(
-            children: [
-              Text(products[i].title!),
-            ],
-          ),
-        );
-      },
-    );
-  }
+// function to display fetched data on screen
+// Widget buildPosts(List<ProductModels> products) {
+//   // ListView Builder to show data in a list
+//   return GridView.builder(
+//     padding: const EdgeInsets.symmetric(horizontal: 30),
+//     controller: pageController,
+//     scrollDirection: Axis.horizontal,
+//     gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+//         mainAxisSpacing: 20, maxCrossAxisExtent: 150, mainAxisExtent: 150),
+//     itemCount: products.length,
+//     itemBuilder: (ctx, i) {
+//       return GestureDetector(
+//         onTap: () {
+//           Navigator.push(
+//             context,
+//             MaterialPageRoute(
+//               builder: (context) => const DetailScreen(),
+//             ),
+//           );
+//         },
+//         child: Column(
+//           children: [
+//             Text(products[i].title!),
+//           ],
+//         ),
+//       );
+//     },
+//   );
+// }
 }
 
 class MyTopTitle extends StatelessWidget {
